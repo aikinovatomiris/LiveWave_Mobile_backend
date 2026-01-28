@@ -30,9 +30,11 @@ public class AdminController {
     }
 
     @PostMapping("/events")
-    public ResponseEntity<?> createEvent(@RequestBody Event event,
-                                         @RequestParam(defaultValue = "5") int rows,
-                                         @RequestParam(defaultValue = "10") int cols) {
+    public ResponseEntity<?> createEvent(
+            @RequestBody Event event,
+            @RequestParam(defaultValue = "5") int rows,
+            @RequestParam(defaultValue = "10") int cols
+    ) {
         if (event.getTitle() == null || event.getDate() == null) {
             return ResponseEntity.badRequest().body("Ошибка: поля title и date обязательны.");
         }
@@ -46,18 +48,25 @@ public class AdminController {
         if (!eventRepository.existsById(id)) {
             return ResponseEntity.badRequest().body("Ошибка: событие не найдено.");
         }
+
         eventRepository.deleteById(id);
         return ResponseEntity.ok("Событие удалено успешно ✅");
     }
 
     @PutMapping("/events/{id}")
-    public ResponseEntity<?> updateEvent(@PathVariable Long id, @RequestBody Event updatedEvent) {
+    public ResponseEntity<?> updateEvent(
+            @PathVariable Long id,
+            @RequestBody Event updatedEvent
+    ) {
         Optional<Event> optionalEvent = eventRepository.findById(id);
         if (optionalEvent.isEmpty()) {
-            return ResponseEntity.badRequest().body("Ошибка: событие с id " + id + " не найдено ❌");
+            return ResponseEntity.badRequest().body(
+                    "Ошибка: событие с id " + id + " не найдено ❌"
+            );
         }
 
         Event event = optionalEvent.get();
+
         if (updatedEvent.getTitle() != null) event.setTitle(updatedEvent.getTitle());
         if (updatedEvent.getDescription() != null) event.setDescription(updatedEvent.getDescription());
         if (updatedEvent.getDate() != null) event.setDate(updatedEvent.getDate());
