@@ -50,7 +50,7 @@ public class AdminController {
         }
 
         eventRepository.deleteById(id);
-        return ResponseEntity.ok("Событие удалено успешно ✅");
+        return ResponseEntity.ok("Событие удалено успешно");
     }
 
     @PutMapping("/events/{id}")
@@ -61,7 +61,7 @@ public class AdminController {
         Optional<Event> optionalEvent = eventRepository.findById(id);
         if (optionalEvent.isEmpty()) {
             return ResponseEntity.badRequest().body(
-                    "Ошибка: событие с id " + id + " не найдено ❌"
+                    "Ошибка: событие с id " + id + " не найдено"
             );
         }
 

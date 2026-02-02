@@ -11,8 +11,8 @@ import java.util.Map;
 
 @Component
 public class JwtUtil {
-    private static final String SECRET_KEY = "supersecretkeyforsigningjwtlivewave2025";
-    private static final long EXPIRATION_TIME = 86400000; // 1 день
+    private static final String SECRET_KEY = "";
+    private static final long EXPIRATION_TIME = 86400000;
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
