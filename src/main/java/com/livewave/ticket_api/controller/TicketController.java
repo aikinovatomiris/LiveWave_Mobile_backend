@@ -1,10 +1,7 @@
-
 package com.livewave.ticket_api.controller;
 
-import com.livewave.ticket_api.model.Event;
-import com.livewave.ticket_api.model.Seat;
-import com.livewave.ticket_api.model.Ticket;
-import com.livewave.ticket_api.model.User;
+import com.livewave.ticket_api.exception.*;
+import com.livewave.ticket_api.model.*;
 import com.livewave.ticket_api.repository.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,74 +31,77 @@ public class TicketController {
             @RequestBody Map<String, Object> body,
             HttpServletRequest request
     ) {
-        try {
-            Long eventId = ((Number) body.get("eventId")).longValue();
-            Event event = eventRepository.findById(eventId)
-                    .orElseThrow(() -> new RuntimeException("Event not found"));
 
-            List<?> rawSeats = (List<?>) body.get("seatNumbers");
-            if (rawSeats == null || rawSeats.isEmpty())
-                return ResponseEntity.badRequest().body("Список мест пуст");
+        Long eventId = ((Number) body.get("eventId")).longValue();
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Event not found"));
 
-            List<String> seatNumbers = new ArrayList<>();
-            for (Object o : rawSeats) seatNumbers.add(String.valueOf(o));
-
-            String email = (String) request.getAttribute("email");
-            Optional<User> userOpt = (email != null) ? userRepository.findByEmail(email) : Optional.empty();
-
-            List<String> failedSeats = new ArrayList<>();
-            List<Ticket> savedTickets = new ArrayList<>();
-
-            for (String seatNumber : seatNumbers) {
-                Optional<Seat> seatOpt = seatRepository.findByEventIdAndSeatNumber(eventId, seatNumber);
-                if (seatOpt.isEmpty()) {
-                    failedSeats.add(seatNumber);
-                    continue;
-                }
-
-                Seat seat = seatOpt.get();
-                boolean alreadyBought = ticketRepository.findByEventIdAndSeatId(eventId, seat.getId()).isPresent();
-                if (alreadyBought) {
-                    failedSeats.add(seatNumber);
-                    continue;
-                }
-
-                Ticket ticket = new Ticket();
-                ticket.setEvent(event);
-                ticket.setSeatNumber(seatNumber);
-                ticket.setSeatId(seat.getId());
-                userOpt.ifPresent(ticket::setUser);
-
-                savedTickets.add(ticketRepository.save(ticket));
-            }
-
-            if (!failedSeats.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body("Следующие места уже заняты: " + String.join(", ", failedSeats));
-            }
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "Покупка успешна!");
-            response.put("created", savedTickets.size());
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Ошибка при покупке: " + e.getMessage());
+        List<?> rawSeats = (List<?>) body.get("seatNumbers");
+        if (rawSeats == null || rawSeats.isEmpty()) {
+            throw new IllegalArgumentException("Список мест пуст");
         }
+
+        List<String> seatNumbers = new ArrayList<>();
+        for (Object o : rawSeats) seatNumbers.add(String.valueOf(o));
+
+        String email = (String) request.getAttribute("email");
+        Optional<User> userOpt = (email != null)
+                ? userRepository.findByEmail(email)
+                : Optional.empty();
+
+        List<String> failedSeats = new ArrayList<>();
+        List<Ticket> savedTickets = new ArrayList<>();
+
+        for (String seatNumber : seatNumbers) {
+
+            Seat seat = seatRepository
+                    .findByEventIdAndSeatNumber(eventId, seatNumber)
+                    .orElse(null);
+
+            if (seat == null) {
+                failedSeats.add(seatNumber);
+                continue;
+            }
+
+            boolean alreadyBought = ticketRepository
+                    .findByEventIdAndSeatId(eventId, seat.getId())
+                    .isPresent();
+
+            if (alreadyBought) {
+                failedSeats.add(seatNumber);
+                continue;
+            }
+
+            Ticket ticket = new Ticket();
+            ticket.setEvent(event);
+            ticket.setSeatNumber(seatNumber);
+            ticket.setSeatId(seat.getId());
+            userOpt.ifPresent(ticket::setUser);
+
+            savedTickets.add(ticketRepository.save(ticket));
+        }
+
+        if (!failedSeats.isEmpty()) {
+            throw new SeatConflictException(failedSeats);
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Покупка успешна!");
+        response.put("created", savedTickets.size());
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/myTickets")
     public List<Ticket> myTickets(HttpServletRequest request) {
+
         String email = (String) request.getAttribute("email");
         if (email == null) {
-            throw new RuntimeException("Unauthorized");
+            throw new UnauthorizedException("Unauthorized");
         }
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         return ticketRepository.findByUser(user);
     }
 }
-

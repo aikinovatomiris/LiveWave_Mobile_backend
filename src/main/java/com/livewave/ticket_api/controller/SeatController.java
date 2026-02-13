@@ -1,6 +1,8 @@
 package com.livewave.ticket_api.controller;
 
 import com.livewave.ticket_api.dto.SeatDto;
+import com.livewave.ticket_api.exception.BadRequestException;
+import com.livewave.ticket_api.exception.ResourceNotFoundException;
 import com.livewave.ticket_api.model.Seat;
 import com.livewave.ticket_api.model.Ticket;
 import com.livewave.ticket_api.repository.SeatRepository;
@@ -18,14 +20,27 @@ public class SeatController {
     private final SeatRepository seatRepository;
     private final TicketRepository ticketRepository;
 
-    public SeatController(SeatRepository seatRepository, TicketRepository ticketRepository) {
+    public SeatController(SeatRepository seatRepository,
+                          TicketRepository ticketRepository) {
         this.seatRepository = seatRepository;
         this.ticketRepository = ticketRepository;
     }
 
     @GetMapping("/{eventId}")
     public List<SeatDto> getSeatsByEvent(@PathVariable Long eventId) {
-        List<Seat> seats = seatRepository.findByEventIdOrderByRowNumAscColNumAsc(eventId);
+
+        if (eventId == null) {
+            throw new BadRequestException("Event ID is required");
+        }
+
+        List<Seat> seats =
+                seatRepository.findByEventIdOrderByRowNumAscColNumAsc(eventId);
+
+        if (seats.isEmpty()) {
+            throw new ResourceNotFoundException(
+                    "No seats found for event with id: " + eventId
+            );
+        }
 
         List<Ticket> tickets = ticketRepository.findByEventId(eventId);
 
@@ -35,8 +50,11 @@ public class SeatController {
                 .collect(Collectors.toSet());
 
         List<SeatDto> dto = new ArrayList<>(seats.size());
+
         for (Seat s : seats) {
-            boolean booked = s.getId() != null && bookedSeatIds.contains(s.getId());
+            boolean booked = s.getId() != null &&
+                    bookedSeatIds.contains(s.getId());
+
             SeatDto seatDto = new SeatDto(
                     s.getId(),
                     s.getEventId(),
@@ -45,11 +63,10 @@ public class SeatController {
                     s.getColNum(),
                     booked
             );
+
             dto.add(seatDto);
         }
+
         return dto;
     }
 }
-
-
-

@@ -2,14 +2,12 @@ package com.livewave.ticket_api.controller;
 
 import com.livewave.ticket_api.model.Event;
 import com.livewave.ticket_api.model.Seat;
-import com.livewave.ticket_api.repository.EventRepository;
+import com.livewave.ticket_api.model.Ticket;
 import com.livewave.ticket_api.repository.SeatRepository;
 import com.livewave.ticket_api.repository.TicketRepository;
 import com.livewave.ticket_api.service.EventService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -18,30 +16,28 @@ import java.util.stream.Collectors;
 @CrossOrigin(origins = "*")
 public class EventController {
 
-    @Autowired
-    private EventRepository eventRepository;
+    private final EventService eventService;
+    private final SeatRepository seatRepository;
+    private final TicketRepository ticketRepository;
 
-    @Autowired
-    private SeatRepository seatRepository;
-
-    @Autowired
-    private TicketRepository ticketRepository;
-
-    @Autowired
-    private EventService eventService;
+    public EventController(
+            EventService eventService,
+            SeatRepository seatRepository,
+            TicketRepository ticketRepository
+    ) {
+        this.eventService = eventService;
+        this.seatRepository = seatRepository;
+        this.ticketRepository = ticketRepository;
+    }
 
     @GetMapping
     public List<Event> getAllEvents(@RequestParam(required = false) String city) {
-        if (city != null && !city.isEmpty()) {
-            return eventRepository.findByCityIgnoreCase(city);
-        }
-        return eventRepository.findAll();
+        return eventService.findAll(city);
     }
 
     @GetMapping("/{id}")
     public Event getEventById(@PathVariable Long id) {
-        return eventRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Event not found with id: " + id));
+        return eventService.findById(id);
     }
 
     @PostMapping
@@ -52,17 +48,12 @@ public class EventController {
         e.setCity((String) body.get("city"));
         e.setVenue((String) body.get("venue"));
         e.setLocation((String) body.get("location"));
-
-        if (body.get("date") != null) {
-            String dateString = (String) body.get("date");
-            try {
-                java.time.format.DateTimeFormatter formatter =
-                        java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-                e.setDate(java.time.LocalDateTime.parse(dateString, formatter));
-            } catch (Exception ex) {
-                throw new RuntimeException("Invalid date format. Use 'yyyy-MM-dd HH:mm' (e.g. 2025-11-01 18:00)");
-            }
-        }
+        e.setImageBanner(
+                (String) body.getOrDefault(
+                        "imageBanner",
+                        "assets/images/default_banner.jpg"
+                )
+        );
 
         if (body.get("price") != null) {
             e.setPrice(Double.valueOf(String.valueOf(body.get("price"))));
@@ -70,21 +61,23 @@ public class EventController {
             e.setPrice(0.0);
         }
 
-        e.setImageBanner((String) body.getOrDefault("imageBanner", "assets/images/default_banner.jpg"));
-
         int rows = ((Number) body.getOrDefault("rows", 10)).intValue();
         int cols = ((Number) body.getOrDefault("cols", 10)).intValue();
+        String date = (String) body.get("date");
 
-        return eventService.createEventWithSeats(e, rows, cols);
+        return eventService.createEventWithSeats(e, rows, cols, date);
     }
 
     @GetMapping("/{id}/seats")
     public List<Map<String, Object>> getSeats(@PathVariable Long id) {
-        List<Seat> seats = seatRepository.findByEventIdOrderByRowNumAscColNumAsc(id);
-        List<com.livewave.ticket_api.model.Ticket> tickets = ticketRepository.findByEventId(id);
+        List<Seat> seats =
+                seatRepository.findByEventIdOrderByRowNumAscColNumAsc(id);
+
+        List<Ticket> tickets =
+                ticketRepository.findByEventId(id);
 
         Set<Long> bookedSeatIds = tickets.stream()
-                .map(t -> t.getSeatId())
+                .map(Ticket::getSeatId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
@@ -94,7 +87,11 @@ public class EventController {
             m.put("seatNumber", s.getSeatNumber());
             m.put("row", s.getRowNum());
             m.put("col", s.getColNum());
-            m.put("status", bookedSeatIds.contains(s.getId()) ? "booked" : "available");
+            m.put("status",
+                    bookedSeatIds.contains(s.getId())
+                            ? "booked"
+                            : "available"
+            );
             return m;
         }).collect(Collectors.toList());
     }
