@@ -3,6 +3,7 @@ package com.livewave.ticket_api.controller;
 import com.livewave.ticket_api.exception.*;
 import com.livewave.ticket_api.model.*;
 import com.livewave.ticket_api.repository.*;
+import com.livewave.ticket_api.service.TicketService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
@@ -16,6 +17,9 @@ public class TicketController {
 
     @Autowired
     private TicketRepository ticketRepository;
+
+    @Autowired
+    private TicketService ticketService;
 
     @Autowired
     private EventRepository eventRepository;
@@ -78,7 +82,8 @@ public class TicketController {
             ticket.setSeatId(seat.getId());
             userOpt.ifPresent(ticket::setUser);
 
-            savedTickets.add(ticketRepository.save(ticket));
+            // 🔥 ВАЖНО — сохраняем через service
+            savedTickets.add(ticketService.save(ticket));
         }
 
         if (!failedSeats.isEmpty()) {

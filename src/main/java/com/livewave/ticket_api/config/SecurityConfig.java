@@ -28,7 +28,15 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/events", "/events/**", "/seats", "/seats/**").permitAll()
 
+                        .requestMatchers(HttpMethod.POST, "/users/fcm-token").permitAll()
+
                         .requestMatchers(HttpMethod.POST, "/events").hasAuthority("ADMIN")
+
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
 
                         .requestMatchers("/seats/book", "/buyTicket", "/myTickets", "/profile", "/users/**")
                         .authenticated()

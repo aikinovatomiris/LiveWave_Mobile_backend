@@ -1,9 +1,9 @@
-
 package com.livewave.ticket_api.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Data
 @Entity
@@ -20,6 +20,10 @@ public class Ticket {
     @Column(name = "seat_number")
     private String seatNumber;
 
+    // Флаг отправки напоминания (чтобы не отправлять повторно)
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean reminderSent = false;
+
     @Column(name = "seat_id")
     private Long seatId;
 
@@ -28,9 +32,19 @@ public class Ticket {
 
     @ManyToOne
     @JoinColumn(name = "event_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Event event;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @JsonIgnoreProperties({"password", "resetToken", "resetTokenExpiry"})
     private User user;
+
+    public boolean isReminderSent() {
+        return reminderSent;
+    }
+
+    public void setReminderSent(boolean reminderSent) {
+        this.reminderSent = reminderSent;
+    }
 }

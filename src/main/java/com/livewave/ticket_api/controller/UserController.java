@@ -94,4 +94,32 @@ public class UserController {
                 Map.of("message", "Profile updated successfully")
         );
     }
+
+    @PostMapping("/fcm-token")
+    public ResponseEntity<?> updateFcmToken(
+            @RequestHeader("Authorization") String token,
+            @RequestBody Map<String, String> body
+    ) { System.out.println("FCM CONTROLLER HIT");
+        System.out.println("===== FCM TOKEN REQUEST =====");
+        System.out.println(body);
+
+        String jwt = token.replace("Bearer ", "").trim();
+        String email = jwtUtil.extractEmail(jwt);
+
+        System.out.println("JWT EMAIL = " + email);
+
+        if (!body.containsKey("fcmToken")) {
+            throw new BadRequestException("fcmToken is required");
+        }
+
+        service.updateFcmToken(email, body.get("fcmToken"));
+
+        System.out.println("FCM TOKEN SAVED SUCCESSFULLY");
+
+        return ResponseEntity.ok(
+                Map.of("message", "FCM token updated successfully")
+        );
+    }
+
+
 }

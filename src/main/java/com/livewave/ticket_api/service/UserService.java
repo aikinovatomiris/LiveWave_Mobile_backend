@@ -133,4 +133,15 @@ public class UserService implements UserDetailsService {
 
         userRepository.save(user);
     }
+
+    public void updateFcmToken(String email, String fcmToken) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User", "email", email)
+                );
+
+        user.setFcmToken(fcmToken);
+        userRepository.save(user);
+    }
+
 }
