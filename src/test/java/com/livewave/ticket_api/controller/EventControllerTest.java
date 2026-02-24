@@ -54,10 +54,7 @@ class EventControllerTest {
     @MockBean
     private UserDetailsService userDetailsService;
 
-    // ==============================
     // GET ALL EVENTS
-    // ==============================
-
     @Test
     void getAllEvents_withoutCity_shouldReturnList() throws Exception {
 
@@ -87,10 +84,7 @@ class EventControllerTest {
                 .andExpect(jsonPath("$[0].city").value("Almaty"));
     }
 
-    // ==============================
     // GET EVENT BY ID
-    // ==============================
-
     @Test
     void getEventById_shouldReturnEvent() throws Exception {
 
@@ -106,10 +100,7 @@ class EventControllerTest {
                 .andExpect(jsonPath("$.title").value("Rock Show"));
     }
 
-    // ==============================
     // CREATE EVENT
-    // ==============================
-
     @Test
     void createEvent_shouldCreateEventWithSeats() throws Exception {
 
@@ -173,10 +164,7 @@ class EventControllerTest {
                 .andExpect(jsonPath("$.id").value(1L));
     }
 
-    // ==============================
     // GET SEATS
-    // ==============================
-
     @Test
     void getSeats_bookedSeat_shouldReturnBooked() throws Exception {
 

@@ -5,6 +5,7 @@ import com.livewave.ticket_api.model.Ticket;
 import com.livewave.ticket_api.repository.TicketRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.livewave.ticket_api.dto.SeatDto;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -16,6 +17,7 @@ public class TicketService {
 
     private final TicketRepository ticketRepository;
     private final NotificationService notificationService;
+    private final WebSocketService webSocketService;
 
     public List<Ticket> findAll() {
         return ticketRepository.findAll();
@@ -23,7 +25,26 @@ public class TicketService {
 
     public Ticket save(Ticket ticket) {
         Ticket saved = ticketRepository.save(ticket);
+
+        if (saved.getSeatId() != null && saved.getEvent() != null) {
+
+            SeatDto seatDto = new SeatDto(
+                    saved.getSeatId(),
+                    saved.getEvent().getId(),
+                    null,
+                    0,
+                    0,
+                    true
+            );
+
+            webSocketService.sendSeatUpdate(
+                    saved.getEvent().getId(),
+                    seatDto
+            );
+        }
+
         sendInstantReminderIfNeeded(saved);
+
         return saved;
     }
 

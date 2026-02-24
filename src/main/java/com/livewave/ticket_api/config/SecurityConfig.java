@@ -32,6 +32,8 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.POST, "/events").hasAuthority("ADMIN")
 
+                        .requestMatchers("/ws/**", "/ws-sockjs/**").permitAll()
+
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
