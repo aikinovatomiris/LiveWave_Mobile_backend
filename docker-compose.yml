@@ -1,8 +1,23 @@
 version: '3.8'
 
 services:
+
   backend:
     build: .
     container_name: spring_backend
     ports:
       - "8080:8080"
+    depends_on:
+      - sftp
+    environment:
+      SFTP_HOST: sftp
+      SFTP_PORT: 22
+      SFTP_USER: demo
+      SFTP_PASS: demo
+
+  sftp:
+    image: atmoz/sftp
+    container_name: demo_sftp
+    ports:
+      - "2222:22"
+    command: demo:demo:::upload
