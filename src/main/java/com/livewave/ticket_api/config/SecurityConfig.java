@@ -34,6 +34,9 @@ public class SecurityConfig {
 
                         .requestMatchers("/ws/**", "/ws-sockjs/**").permitAll()
 
+                        .requestMatchers("/graphql", "/graphiql", "/graphiql/**").permitAll()
+                        .requestMatchers("/favicon.ico").permitAll()
+
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",

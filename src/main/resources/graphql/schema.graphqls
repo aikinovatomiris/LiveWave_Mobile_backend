@@ -1,0 +1,47 @@
+type Query {
+    events(city: String, limit: Int = 20, offset: Int = 0): [Event!]!
+    event(id: ID!): Event
+    seats(eventId: ID!): [Seat!]!
+    myTickets: [TicketView!]!
+}
+
+type Mutation {
+    buyTickets(eventId: ID!, seatNumbers: [String!]!): BuyResult!
+}
+
+type Event {
+    id: ID!
+    title: String!
+    description: String
+    date: String
+    price: Float!
+    city: String
+    venue: String
+    location: String
+    imageBanner: String
+    imageKey: String
+
+    seats: [Seat!]!
+}
+
+type Seat {
+    id: ID!
+    eventId: ID!
+    seatNumber: String!
+    rowNum: Int
+    colNum: Int
+    booked: Boolean!
+}
+
+type TicketView {
+    id: ID!
+    seatNumber: String
+    seatId: ID
+    purchaseDate: String
+    event: Event!
+}
+
+type BuyResult {
+    message: String!
+    created: Int!
+}
