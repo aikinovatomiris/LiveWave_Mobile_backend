@@ -1,6 +1,42 @@
-version: '3.8'
+#version: '3.8'
+#
+#services:
+#
+#  backend:
+#    build: .
+#    container_name: spring_backend
+#    ports:
+#      - "8080:8080"
+#    depends_on:
+#      - sftp
+#    environment:
+#      SFTP_HOST: sftp
+#      SFTP_PORT: 22
+#      SFTP_USER: demo
+#      SFTP_PASS: demo
+#
+#  sftp:
+#    image: atmoz/sftp
+#    container_name: demo_sftp
+#    ports:
+#      - "2222:22"
+#    command: demo:demo:::upload
+
+version: "3.8"
 
 services:
+  db:
+    image: postgres:15
+    container_name: ticket_postgres
+    environment:
+      POSTGRES_DB: ticket_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d
 
   backend:
     build: .
@@ -8,16 +44,12 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - sftp
+      - db
     environment:
-      SFTP_HOST: sftp
-      SFTP_PORT: 22
-      SFTP_USER: demo
-      SFTP_PASS: demo
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/ticket_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: admin
 
-  sftp:
-    image: atmoz/sftp
-    container_name: demo_sftp
-    ports:
-      - "2222:22"
-    command: demo:demo:::upload
+volumes:
+  pgdata:
